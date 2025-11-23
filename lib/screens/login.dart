@@ -1,11 +1,18 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'pantalla_base.dart';
-import '../screens/user_session.dart'; // <-- IMPORTANTE
+import '../screens/user_session.dart';
 
 class LoginPage extends StatelessWidget {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+
+  void _mostrarMensaje(BuildContext context, String mensaje) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(mensaje)),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +54,7 @@ class LoginPage extends StatelessWidget {
                     TextField(
                       controller: emailController,
                       decoration: InputDecoration(
-                        hintText: 'Username/Email',
+                        hintText: 'Email',
                         hintStyle: TextStyle(color: Colors.white70),
                         enabledBorder: UnderlineInputBorder(
                           borderSide: BorderSide(color: Colors.white54),
@@ -78,16 +85,31 @@ class LoginPage extends StatelessWidget {
 
                     // LOGIN BUTTON
                     ElevatedButton(
-                      onPressed: () {
-                        // Aquí pones los datos con los que quieres iniciar sesión
-                        UserSession.login(
-                          "Nayhely Valle",
-                          emailController.text.trim().isEmpty
-                              ? "ngt.valle@yavirac.edu.ec"
-                              : emailController.text.trim(),
-                        );
+                      onPressed: () async {
+                        String email = emailController.text.trim();
+                        String password = passwordController.text.trim();
 
-                        Navigator.pushReplacementNamed(context, '/categorias');
+                        if (email.isEmpty || password.isEmpty) {
+                          _mostrarMensaje(context, "Completa todos los campos");
+                          return;
+                        }
+
+                        try {
+                          // 🔥 Firebase Sign In
+                          await FirebaseAuth.instance
+                              .signInWithEmailAndPassword(
+                            email: email,
+                            password: password,
+                          );
+
+                          UserSession.login("Usuario", email);
+
+                          Navigator.pushReplacementNamed(
+                              context, '/categorias');
+                        } on FirebaseAuthException catch (e) {
+                          _mostrarMensaje(context,
+                              e.message ?? "Error al iniciar sesión");
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Color.fromARGB(255, 224, 133, 7),
@@ -97,10 +119,9 @@ class LoginPage extends StatelessWidget {
                           borderRadius: BorderRadius.circular(30),
                         ),
                       ),
-                      child: Text('Log In', style: TextStyle(color: Colors.white)),
+                      child:
+                          Text('Log In', style: TextStyle(color: Colors.white)),
                     ),
-
-                    SizedBox(height: 12),
 
                     SizedBox(height: 24),
 
